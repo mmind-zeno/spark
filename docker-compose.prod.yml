@@ -1,0 +1,29 @@
+services:
+  spark-webapp:
+    image: spark-webapp
+    container_name: spark-webapp
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://spark:spark@spark-postgres:5432/spark
+    networks:
+      - spark_internal
+
+  spark-postgres:
+    image: postgres:16-alpine
+    container_name: spark-postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=spark
+      - POSTGRES_PASSWORD=spark
+      - POSTGRES_DB=spark
+    volumes:
+      - spark_data:/var/lib/postgresql/data
+    networks:
+      - spark_internal
+
+networks:
+  spark_internal:
+    external: true
+
+volumes:
+  spark_data:
