@@ -7,6 +7,7 @@ services:
       - DATABASE_URL=postgresql://spark:spark@spark-postgres:5432/spark
     networks:
       - spark_internal
+      - bioavatar_internal
 
   spark-postgres:
     image: postgres:16-alpine
@@ -23,6 +24,8 @@ services:
 
 networks:
   spark_internal:
+    external: true
+  bioavatar_internal:
     external: true
 
 volumes:
