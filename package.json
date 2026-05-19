@@ -12,6 +12,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.10.1",
     "canvas-confetti": "^1.9.4",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.39.0",

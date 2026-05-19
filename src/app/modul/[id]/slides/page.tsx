@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MODULES } from "@/data/modules";
+import { MODUL_01_SLIDES } from "@/data/modules-01";
+import { MODUL_02_SLIDES } from "@/data/modules-02";
 import { markSlideRead, markModuleComplete, getProgress } from "@/lib/progress";
 import { MarkdownContent } from "@/components/MarkdownContent";
+import { SlideCard } from "@/components/SlideCard";
 
 type XPToast = { id: number; xp: number };
 
@@ -21,16 +24,23 @@ export default function SlideViewer() {
   const toastCounter = useRef(0);
   const touchStart = useRef<number | null>(null);
 
+  // Use rich slides for modules 01 and 02
+  const richSlides =
+    id === "01" ? MODUL_01_SLIDES :
+    id === "02" ? MODUL_02_SLIDES :
+    null;
+  const slideCount = richSlides ? richSlides.length : (modul?.slides.length ?? 0);
+
   useEffect(() => {
     if (!modul) return;
     const p = getProgress();
     const readSlides = p.modules[modul.id]?.slidesRead ?? [];
     if (readSlides.length > 0) {
       const lastRead = Math.max(...readSlides);
-      const next = Math.min(lastRead + 1, modul.slides.length - 1);
+      const next = Math.min(lastRead + 1, slideCount - 1);
       setCurrentSlide(next);
     }
-  }, [modul]);
+  }, [modul, slideCount]);
 
   useEffect(() => {
     if (!modul) return;
@@ -46,13 +56,12 @@ export default function SlideViewer() {
 
   const goTo = useCallback(
     (index: number) => {
-      if (!modul) return;
-      if (index < 0 || index >= modul.slides.length) return;
+      if (index < 0 || index >= slideCount) return;
       setDirection(index > currentSlide ? "forward" : "back");
       setAnimKey((k) => k + 1);
       setCurrentSlide(index);
     },
-    [currentSlide, modul]
+    [currentSlide, slideCount]
   );
 
   const handleFinish = useCallback(() => {
@@ -79,9 +88,8 @@ export default function SlideViewer() {
     return <div className="min-h-dvh flex items-center justify-center text-gray-400">Nicht gefunden.</div>;
   }
 
-  const slide = modul.slides[currentSlide];
-  const progress = ((currentSlide + 1) / modul.slides.length) * 100;
-  const isLast = currentSlide === modul.slides.length - 1;
+  const progress = ((currentSlide + 1) / slideCount) * 100;
+  const isLast = currentSlide === slideCount - 1;
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA] flex flex-col select-none">
@@ -90,14 +98,14 @@ export default function SlideViewer() {
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <button
             onClick={() => router.push(`/modul/${modul.id}`)}
-            className="text-gray-400 hover:text-gray-600 p-1 -ml-1"
+            className="text-gray-400 hover:text-gray-600 p-1 -ml-1 text-lg"
           >
             ←
           </button>
           <div className="flex-1">
             <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
               <span>{modul.title}</span>
-              <span>{currentSlide + 1} / {modul.slides.length}</span>
+              <span>{currentSlide + 1} / {slideCount}</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
               <div
@@ -119,19 +127,29 @@ export default function SlideViewer() {
           key={animKey}
           className={direction === "forward" ? "slide-enter-right" : "slide-enter-left"}
         >
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
-            {/* Slide header */}
-            <div className="flex items-center gap-2 mb-4">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
-                style={{ background: modul.colorHex }}
-              >
-                {currentSlide + 1}
+          {richSlides ? (
+            <SlideCard
+              slide={richSlides[currentSlide]}
+              index={currentSlide}
+              colorHex={modul.colorHex}
+              moduleEmoji={modul.emoji}
+            />
+          ) : (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 min-h-[60vh]">
+              <div className="flex items-center gap-2 mb-4">
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
+                  style={{ background: modul.colorHex }}
+                >
+                  {currentSlide + 1}
+                </div>
+                <h2 className="font-bold text-gray-900 text-lg leading-tight">
+                  {modul.slides[currentSlide].title}
+                </h2>
               </div>
-              <h2 className="font-bold text-gray-900 text-lg leading-tight">{slide.title}</h2>
+              <MarkdownContent content={modul.slides[currentSlide].content} />
             </div>
-            <MarkdownContent content={slide.content} />
-          </div>
+          )}
         </div>
       </div>
 
