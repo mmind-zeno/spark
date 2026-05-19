@@ -19,31 +19,34 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA]">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⚡</span>
-            <span className="font-bold text-xl text-gray-900 tracking-tight">SPARK</span>
+      {/* Hero Header — full width */}
+      <div className="relative w-full overflow-hidden" style={{ height: "220px" }}>
+        <img
+          src="/spark-header.jpg"
+          alt="SPARK KI-Trainingsplattform"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)" }} />
+        <div className="absolute inset-0 flex flex-col justify-between px-5 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <img src="/spark-logo.png" alt="SPARK" className="w-8 h-8 rounded-xl" />
+              <span className="font-bold text-xl text-white tracking-tight">SPARK</span>
+            </div>
+            <div className="flex items-center gap-2 rounded-xl px-3 py-1.5" style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+              <span className="text-white text-sm font-semibold">✨</span>
+              <span className="font-bold text-white">{totalXP}</span>
+              <span className="text-white/70 text-sm">XP</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 bg-indigo-50 rounded-xl px-3 py-1.5">
-            <span className="text-indigo-500 text-sm font-semibold">✨</span>
-            <span className="font-bold text-indigo-600">{totalXP}</span>
-            <span className="text-indigo-400 text-sm">XP</span>
+          <div>
+            <h1 className="text-2xl font-bold text-white leading-tight mb-1">KI-Training für Erasmus</h1>
+            <p className="text-white/75 text-sm">5 Module · Quizzes · Badges · Zertifikat</p>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-2xl mx-auto px-4 pb-24 pt-6">
-        {/* Hero */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            KI-Training für Erasmus
-          </h1>
-          <p className="text-gray-500 text-base leading-relaxed">
-            5 Module · Quizzes · Badges · Zertifikat — in deinem eigenen Tempo.
-          </p>
-        </div>
 
         {/* Overall Progress */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
