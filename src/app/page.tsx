@@ -40,7 +40,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white leading-tight mb-1">KI-Training für Erasmus</h1>
+            <h1 className="text-2xl font-bold text-white leading-tight mb-1">Dein KI-Training mit Zertifikat</h1>
             <p className="text-white/75 text-sm">5 Module · Quizzes · Badges · Zertifikat</p>
           </div>
         </div>

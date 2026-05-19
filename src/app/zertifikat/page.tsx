@@ -40,14 +40,18 @@ export default function ZertifikatPage() {
       const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-      // Background
-      page.drawRectangle({
-        x: 0,
-        y: 0,
-        width,
-        height,
-        color: rgb(0.98, 0.98, 1),
-      });
+      // Background image
+      try {
+        const bgRes = await fetch("/cert-bg.jpg");
+        if (bgRes.ok) {
+          const bgBytes = await bgRes.arrayBuffer();
+          const bgImage = await pdfDoc.embedJpg(bgBytes);
+          page.drawImage(bgImage, { x: 0, y: 0, width, height, opacity: 0.18 });
+        }
+      } catch {
+        // fallback to plain background
+        page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.98, 1) });
+      }
 
       // Top accent bar
       page.drawRectangle({

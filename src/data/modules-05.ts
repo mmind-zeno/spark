@@ -64,7 +64,7 @@ export const MODUL_05_SLIDES: RichSlide[] = [
       {
         type: "duties-list",
         items: [
-          { title: "Prompt Engineer", desc: "KI durch präzise Anweisungen optimal steuern — USA: 80.000–300.000 USD/Jahr, +500% Nachfrage seit 2022" },
+          { title: "KI-Koordinator / AI Manager", desc: "KI-Projekte planen, Teams befähigen, Lösungen evaluieren — eine der gefragtesten Rollen 2025–2030" },
           { title: "AI Trainer / RLHF Specialist", desc: "KI durch Feedback-Bewertung trainieren — wächst massiv, viele Remote-Positionen" },
           { title: "AI Ethics Officer", desc: "KI-Systeme auf Fairness und Bias bewerten — Pflichtrolle unter EU AI Act (Hochrisiko)" },
           { title: "AI Integration Specialist", desc: "KI in Unternehmensprozesse implementieren — der «KI-Übersetzer» zwischen IT und Business" },
@@ -273,7 +273,7 @@ export const MODUL_05_SLIDES: RichSlide[] = [
               "2% Arbeitslosigkeit — guter Start",
               "Finanzsektor, Industrie, Maschinenbau stark betroffen",
               "Chance: KI-Hub dank EWR + günstige Steuern",
-              "AI-Lab.li baut regionale KI-Kompetenz auf",
+              "mmind.ai baut regionale KI-Kompetenz auf",
             ],
             bg: "#EFF6FF",
             border: "#BFDBFE",

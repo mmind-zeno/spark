@@ -33,28 +33,29 @@ export default function ModulIntro() {
   return (
     <div className="min-h-dvh bg-[#FAFAFA] flex flex-col">
       {/* Cover */}
-      <div
-        className="relative w-full pt-16 pb-12 px-6 flex flex-col items-center text-white"
-        style={{ background: modul.colorHex }}
-      >
-        <Link href="/" className="absolute top-4 left-4 flex items-center gap-1 text-white/80 hover:text-white text-sm">
+      <div className="relative w-full overflow-hidden" style={{ height: "220px" }}>
+        <img
+          src={`/header-${modul.id}.jpg`}
+          alt={modul.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%)" }} />
+        <Link href="/" className="absolute top-4 left-4 flex items-center gap-1 text-white/80 hover:text-white text-sm z-10">
           ← Dashboard
         </Link>
-        <div className="text-6xl mb-4">{modul.emoji}</div>
-        <div className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
-          Modul {modul.number}
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 px-6 text-white">
+          <div className="text-4xl mb-2">{modul.emoji}</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-white/70 mb-1">
+            Modul {modul.number}
+          </div>
+          <h1 className="text-2xl font-bold text-center leading-tight mb-1">{modul.title}</h1>
+          <p className="text-white/80 text-center text-sm">{modul.subtitle}</p>
         </div>
-        <h1 className="text-3xl font-bold text-center leading-tight mb-2">{modul.title}</h1>
-        <p className="text-white/80 text-center text-sm">{modul.subtitle}</p>
       </div>
 
       {/* Meta */}
       <div className="max-w-2xl mx-auto w-full px-4 -mt-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex gap-4 text-sm text-gray-500">
-          <div className="flex items-center gap-1.5">
-            <span>👤</span>
-            <span>{modul.author}</span>
-          </div>
           <div className="flex items-center gap-1.5">
             <span>🕐</span>
             <span>{modul.duration}</span>
