@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import { MODULES } from "@/data/modules";
 import { MODUL_01_SLIDES } from "@/data/modules-01";
 import { MODUL_02_SLIDES } from "@/data/modules-02";
+import { MODUL_03_SLIDES } from "@/data/modules-03";
+import { MODUL_04_SLIDES } from "@/data/modules-04";
 import { markSlideRead, markModuleComplete, getProgress } from "@/lib/progress";
 import { MarkdownContent } from "@/components/MarkdownContent";
 import { SlideCard } from "@/components/SlideCard";
@@ -24,10 +26,12 @@ export default function SlideViewer() {
   const toastCounter = useRef(0);
   const touchStart = useRef<number | null>(null);
 
-  // Use rich slides for modules 01 and 02
+  // Use rich slides for modules 01–04
   const richSlides =
     id === "01" ? MODUL_01_SLIDES :
     id === "02" ? MODUL_02_SLIDES :
+    id === "03" ? MODUL_03_SLIDES :
+    id === "04" ? MODUL_04_SLIDES :
     null;
   const slideCount = richSlides ? richSlides.length : (modul?.slides.length ?? 0);
 
