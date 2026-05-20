@@ -42,12 +42,16 @@ export default function ZertifikatPage() {
       // Background
       page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.98, 1) });
 
-      // Try to embed background image
+      // Try to embed background image (fal.ai returns PNG despite .jpg extension)
       try {
         const bgRes = await fetch("/cert-bg.jpg");
         if (bgRes.ok) {
-          const bgBytes = await bgRes.arrayBuffer();
-          const bgImage = await pdfDoc.embedJpg(new Uint8Array(bgBytes));
+          const bgBytes = new Uint8Array(await bgRes.arrayBuffer());
+          // Detect PNG by magic bytes: 89 50 4E 47
+          const isPng = bgBytes[0] === 0x89 && bgBytes[1] === 0x50;
+          const bgImage = isPng
+            ? await pdfDoc.embedPng(bgBytes)
+            : await pdfDoc.embedJpg(bgBytes);
           page.drawImage(bgImage, { x: 0, y: 0, width, height, opacity: 0.12 });
         }
       } catch {

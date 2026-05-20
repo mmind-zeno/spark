@@ -160,7 +160,9 @@ export function getCompletedModulesCount(): number {
 
 export function canAccessCertificate(): boolean {
   const p = getProgress();
-  return p.badges.includes("ai-graduate");
+  // Primary: badge set — Secondary: all quizzes passed (badge may be missing from older sessions)
+  if (p.badges.includes("ai-graduate")) return true;
+  return MODULES.every((m) => p.modules[m.id]?.quizPassed === true);
 }
 
 export function incrementLocalDownloadCount(): void {
