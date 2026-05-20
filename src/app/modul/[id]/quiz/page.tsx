@@ -21,6 +21,7 @@ export default function QuizPage() {
   const [scores, setScores] = useState<boolean[]>([]);
   const [finished, setFinished] = useState(false);
   const [result, setResult] = useState<{ passed: boolean; xpGained: number; badge: string | null; allComplete: boolean } | null>(null);
+  const [showNps, setShowNps] = useState(false);
 
   if (!modul) return null;
 
@@ -62,6 +63,29 @@ export default function QuizPage() {
 
   if (finished && result) {
     const correctCount = scores.filter(Boolean).length;
+
+    if (showNps) {
+      return (
+        <NpsScreen
+          moduleId={modul.id}
+          onDone={() => {
+            const nextId = String(Number(modul.id) + 1).padStart(2, "0");
+            const nextModul = MODULES.find((m) => m.id === nextId);
+            if (result.allComplete) router.push("/zertifikat");
+            else if (nextModul) router.push(`/modul/${nextId}`);
+            else router.push("/");
+          }}
+          onSkip={() => {
+            const nextId = String(Number(modul.id) + 1).padStart(2, "0");
+            const nextModul = MODULES.find((m) => m.id === nextId);
+            if (result.allComplete) router.push("/zertifikat");
+            else if (nextModul) router.push(`/modul/${nextId}`);
+            else router.push("/");
+          }}
+        />
+      );
+    }
+
     return (
       <QuizResult
         modul={modul}
@@ -69,13 +93,8 @@ export default function QuizPage() {
         total={totalQ}
         result={result}
         onRetry={handleRetry}
+        onContinue={() => setShowNps(true)}
         onDashboard={() => router.push("/")}
-        onNext={() => {
-          const nextId = String(Number(modul.id) + 1).padStart(2, "0");
-          const nextModul = MODULES.find((m) => m.id === nextId);
-          if (nextModul) router.push(`/modul/${nextId}`);
-          else router.push("/");
-        }}
         hasNextModule={!!MODULES.find((m) => m.id === String(Number(modul.id) + 1).padStart(2, "0"))}
       />
     );
@@ -215,7 +234,7 @@ function QuizResult({
   result,
   onRetry,
   onDashboard,
-  onNext,
+  onContinue,
   hasNextModule,
 }: {
   modul: (typeof MODULES)[0];
@@ -224,7 +243,7 @@ function QuizResult({
   result: { passed: boolean; xpGained: number; badge: string | null; allComplete: boolean };
   onRetry: () => void;
   onDashboard: () => void;
-  onNext: () => void;
+  onContinue: () => void;
   hasNextModule: boolean;
 }) {
   const p = getProgress();
@@ -233,7 +252,6 @@ function QuizResult({
   return (
     <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4 pb-8">
       <div className="max-w-md w-full text-center">
-        {/* Result icon */}
         <div className="text-7xl mb-4">{result.passed ? "🎉" : "😅"}</div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           {result.passed ? "Bestanden!" : "Knapp daneben!"}
@@ -242,16 +260,13 @@ function QuizResult({
           {score} von {total} Fragen richtig
         </p>
 
-        {/* Score */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
           <div className="flex justify-center gap-2 mb-4">
             {Array.from({ length: total }).map((_, i) => (
               <div
                 key={i}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white"
-                style={{
-                  background: i < score ? "#22C55E" : "#EF4444",
-                }}
+                style={{ background: i < score ? "#22C55E" : "#EF4444" }}
               >
                 {i < score ? "✓" : "✗"}
               </div>
@@ -282,22 +297,13 @@ function QuizResult({
 
         {result.passed ? (
           <>
-            {result.allComplete ? (
-              <button
-                onClick={onDashboard}
-                className="w-full py-4 rounded-2xl font-bold text-white text-lg mb-3 bg-indigo-500 hover:bg-indigo-600 transition-all active:scale-[0.98]"
-              >
-                Zertifikat holen 🎓
-              </button>
-            ) : hasNextModule ? (
-              <button
-                onClick={onNext}
-                className="w-full py-4 rounded-2xl font-bold text-white text-lg mb-3 transition-all active:scale-[0.98] hover:opacity-90"
-                style={{ background: modul.colorHex }}
-              >
-                Nächstes Modul →
-              </button>
-            ) : null}
+            <button
+              onClick={onContinue}
+              className="w-full py-4 rounded-2xl font-bold text-white text-lg mb-3 transition-all active:scale-[0.98] hover:opacity-90"
+              style={{ background: result.allComplete ? "#6366F1" : modul.colorHex }}
+            >
+              {result.allComplete ? "Zertifikat holen 🎓" : hasNextModule ? "Nächstes Modul →" : "Weiter"}
+            </button>
             <button
               onClick={onDashboard}
               className="w-full py-3 rounded-2xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-base"
@@ -315,13 +321,110 @@ function QuizResult({
               Nochmals versuchen
             </button>
             <button
-              onClick={onDashboard}
+              onClick={onContinue}
               className="w-full py-3 rounded-2xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-base"
             >
               Zum Dashboard
             </button>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function NpsScreen({
+  moduleId,
+  onDone,
+  onSkip,
+}: {
+  moduleId: string;
+  onDone: () => void;
+  onSkip: () => void;
+}) {
+  const [selected, setSelected] = useState<number | null>(null);
+  const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = async () => {
+    if (selected === null) return;
+    setSubmitting(true);
+    try {
+      await fetch("/api/nps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId, score: selected, comment: comment.trim() || undefined }),
+      });
+    } catch {
+      // fire and forget
+    }
+    setSubmitted(true);
+    setTimeout(onDone, 1200);
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4">
+        <div className="text-5xl mb-4">🙏</div>
+        <p className="text-xl font-bold text-gray-900 mb-2">Danke für dein Feedback!</p>
+        <p className="text-gray-500 text-sm">Du wirst weitergeleitet…</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4 pb-8">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-6">
+          <div className="text-4xl mb-3">💬</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Kurze Frage</h2>
+          <p className="text-gray-500 text-sm">Wie wahrscheinlich ist es, dass du SPARK einem Kollegen empfiehlst?</p>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
+          <div className="flex justify-between text-xs text-gray-400 mb-3 px-1">
+            <span>Gar nicht</span>
+            <span>Auf jeden Fall</span>
+          </div>
+          <div className="grid grid-cols-11 gap-1 mb-4">
+            {Array.from({ length: 11 }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setSelected(i)}
+                className={`h-10 rounded-lg text-sm font-bold transition-all ${
+                  selected === i
+                    ? "bg-indigo-500 text-white scale-110 shadow-md"
+                    : "bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"
+                }`}
+              >
+                {i}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Optionaler Kommentar (was hat dir besonders gut gefallen oder was könnten wir verbessern?)"
+            rows={3}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all resize-none text-gray-700 placeholder:text-gray-400"
+          />
+        </div>
+
+        <button
+          onClick={handleSubmit}
+          disabled={selected === null || submitting}
+          className="w-full py-4 rounded-2xl font-bold text-white text-base bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] mb-3"
+        >
+          {submitting ? "Wird gesendet…" : "Absenden & weiter"}
+        </button>
+        <button
+          onClick={onSkip}
+          className="w-full py-3 rounded-2xl text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          Überspringen
+        </button>
       </div>
     </div>
   );

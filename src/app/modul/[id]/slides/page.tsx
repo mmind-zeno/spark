@@ -46,6 +46,12 @@ export default function SlideViewer() {
       const next = Math.min(lastRead + 1, slideCount - 1);
       setCurrentSlide(next);
     }
+    // Track module view (fire-and-forget)
+    fetch("/api/module-view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ moduleId: modul.id }),
+    }).catch(() => {});
   }, [modul, slideCount]);
 
   useEffect(() => {

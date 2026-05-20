@@ -179,8 +179,17 @@ export default function Dashboard() {
           </div>
         </Link>
 
-        <div className="mt-8 text-center text-xs text-gray-400">
-          Powered by MMIND GmbH · mmind.ai
+        <div className="mt-8 text-center text-xs text-gray-400 space-y-1">
+          <div>Powered by MMIND GmbH · mmind.ai</div>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/datenschutz" className="hover:text-gray-600 underline underline-offset-2">
+              Datenschutz
+            </Link>
+            <span>·</span>
+            <a href="mailto:info@mmind.ai" className="hover:text-gray-600">
+              Kontakt
+            </a>
+          </div>
         </div>
       </main>
     </div>
