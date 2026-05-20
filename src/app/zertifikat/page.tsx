@@ -8,7 +8,7 @@ export default function ZertifikatPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [generating, setGenerating] = useState(false);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [totalXP, setTotalXP] = useState(0);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -17,10 +17,7 @@ export default function ZertifikatPage() {
     setHasAccess(access);
     const p = getProgress();
     setTotalXP(p.totalXP);
-    if (!access) {
-      router.replace("/");
-    }
-  }, [router]);
+  }, []);
 
   const handleDownload = async () => {
     if (!name.trim()) {
@@ -40,17 +37,17 @@ export default function ZertifikatPage() {
       const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
       const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-      // Background image
+      // Background
+      page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.98, 1) });
       try {
         const bgRes = await fetch("/cert-bg.jpg");
         if (bgRes.ok) {
           const bgBytes = await bgRes.arrayBuffer();
-          const bgImage = await pdfDoc.embedJpg(bgBytes);
-          page.drawImage(bgImage, { x: 0, y: 0, width, height, opacity: 0.18 });
+          const bgImage = await pdfDoc.embedJpg(new Uint8Array(bgBytes));
+          page.drawImage(bgImage, { x: 0, y: 0, width, height, opacity: 0.15 });
         }
       } catch {
-        // fallback to plain background
-        page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.98, 1) });
+        // keep plain background on error
       }
 
       // Top accent bar
@@ -219,13 +216,16 @@ export default function ZertifikatPage() {
 
       // Generate and download
       const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([pdfBytes as unknown as BlobPart], { type: "application/pdf" });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blob = new Blob([new Uint8Array(pdfBytes.buffer, pdfBytes.byteOffset, pdfBytes.byteLength) as any], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `SPARK-Zertifikat-${name.replace(/\s+/g, "-")}.pdf`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
 
       // Track download in DB
       await fetch("/api/zertifikat/download", { method: "POST" }).catch(() => {});
@@ -236,7 +236,23 @@ export default function ZertifikatPage() {
     }
   };
 
-  if (!hasAccess) return null;
+  if (hasAccess === null) return null; // hydrating
+
+  if (!hasAccess) {
+    return (
+      <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4 text-center">
+        <div className="text-5xl mb-4">🔒</div>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">Noch nicht freigeschaltet</h1>
+        <p className="text-gray-500 text-sm mb-6">Schliesse alle 5 Module inkl. Quiz ab, um dein Zertifikat zu erhalten.</p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-3 rounded-2xl font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-all"
+        >
+          Zum Dashboard
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4 pb-8">
