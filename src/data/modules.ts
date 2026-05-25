@@ -39,7 +39,7 @@ export const MODULES: Module[] = [
     number: 1,
     title: "EU AI Act",
     subtitle: "Europas Antwort auf die KI-Revolution",
-    author: "MMIND",
+    author: "Hartmut",
     emoji: "🏛️",
     color: "bg-red-500",
     colorHex: "#EF4444",
@@ -161,7 +161,7 @@ export const MODULES: Module[] = [
     number: 2,
     title: "ChatGPT Deep Dive",
     subtitle: "Von den Grundlagen bis zum Profi-Prompting",
-    author: "MMIND",
+    author: "Phi Yen",
     emoji: "💬",
     color: "bg-amber-500",
     colorHex: "#F59E0B",
@@ -283,7 +283,7 @@ export const MODULES: Module[] = [
     number: 3,
     title: "KI & Ernährung",
     subtitle: "Von der Küche ins Labor — KI revolutioniert was wir essen",
-    author: "MMIND",
+    author: "Zeno",
     emoji: "🥗",
     color: "bg-green-500",
     colorHex: "#22C55E",
@@ -405,7 +405,7 @@ export const MODULES: Module[] = [
     number: 4,
     title: "KI & Umwelt",
     subtitle: "Klimaretter oder Klimakiller — die unbequeme Frage",
-    author: "MMIND",
+    author: "Phi Yen",
     emoji: "🌍",
     color: "bg-blue-500",
     colorHex: "#3B82F6",
@@ -510,15 +510,15 @@ export const MODULES: Module[] = [
         explanation: "Die tägliche moderate ChatGPT-Nutzung erzeugt etwa 5–15 kg CO2 pro Jahr — real aber überschaubar im Vergleich zu Flugreisen oder Fleischkonsum. Bewusstsein hilft, Panikmache nicht.",
       },
       {
-        question: "Warum sind Handwerksberufe weniger von KI-Automatisierung bedroht als Bürojobs?",
+        question: "Was ist der wichtigste persönliche Beitrag zur nachhaltigen KI-Nutzung?",
         options: [
-          { label: "A", text: "Handwerker verdienen zu wenig — Automatisierung lohnt sich nicht" },
-          { label: "B", text: "Es gibt keine KI-Tools für Handwerk" },
-          { label: "C", text: "Physische, unstrukturierte Umgebungen und Kundennähe sind für Roboter noch schwer zu replizieren" },
-          { label: "D", text: "Handwerksberufe sind gesetzlich vor Automatisierung geschützt" },
+          { label: "A", text: "KI komplett boykottieren — null Emissionen" },
+          { label: "B", text: "Nur kostenlose KI-Tools nutzen, da diese weniger Energie verbrauchen" },
+          { label: "C", text: "Bewusst nutzen: gezielte statt redundante Anfragen, effiziente Modelle wählen, Ergebnisse wiederverwenden" },
+          { label: "D", text: "Nur lokale Open-Source-Modelle auf dem eigenen Laptop nutzen" },
         ],
         correct: "C",
-        explanation: "Roboter brauchen präzise, strukturierte Umgebungen. Das Badezimmer jedes Kunden ist anders, jede Baustelle einzigartig — das überfordert aktuelle Robotik. Zudem ist das Vertrauensverhältnis zum Handwerker persönlich und schwer ersetzbar.",
+        explanation: "Vollständiger Verzicht ist unrealistisch. Der grösste Hebel liegt in bewusster Nutzung: präzise Prompts statt mehrfacher Versuche, kleinere Modelle für einfache Aufgaben, und Ergebnisse speichern statt neu generieren.",
       },
     ],
   },
@@ -527,7 +527,7 @@ export const MODULES: Module[] = [
     number: 5,
     title: "KI & Berufe der Zukunft",
     subtitle: "Nimmt KI meinen Job? — Die ehrliche Antwort",
-    author: "MMIND",
+    author: "Phi Yen",
     emoji: "🚀",
     color: "bg-purple-500",
     colorHex: "#A855F7",
@@ -646,8 +646,6 @@ export const MODULES: Module[] = [
   },
 ];
 
-export const TOTAL_MAX_XP = 1425;
-
 export const XP_REWARDS = {
   SLIDE_READ: 5,
   MODULE_COMPLETE: 50,
@@ -656,6 +654,12 @@ export const XP_REWARDS = {
   QUIZ_RETRY_PASS: 50,
   ALL_MODULES_BONUS: 500,
 } as const;
+
+export const TOTAL_MAX_XP =
+  MODULES.reduce((sum, m) => sum + m.slides.length * XP_REWARDS.SLIDE_READ, 0) +
+  MODULES.length * XP_REWARDS.MODULE_COMPLETE +
+  MODULES.length * XP_REWARDS.QUIZ_PERFECT +
+  XP_REWARDS.ALL_MODULES_BONUS;
 
 export const BADGES = [
   { id: "ai-act-expert", emoji: "🏛️", name: "AI Act Expert", moduleId: "01" },

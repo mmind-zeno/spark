@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MODULES } from "@/data/modules";
-import { submitQuiz, markQuizRetry, getProgress } from "@/lib/progress";
+import { submitQuiz, markQuizRetry, getProgress, canStartQuiz, hasSubmittedNps, markNpsSubmitted } from "@/lib/progress";
+import { normalizeModuleId } from "@/lib/progress-validation";
+import { ModuleProgressHeader } from "@/components/ModuleProgressHeader";
 
 type AnswerState = {
   selected: string | null;
@@ -13,8 +15,9 @@ type AnswerState = {
 export default function QuizPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params.id as string;
-  const modul = MODULES.find((m) => m.id === id);
+  const rawId = params.id as string;
+  const id = normalizeModuleId(rawId);
+  const modul = id ? MODULES.find((m) => m.id === id) : undefined;
 
   const [questionIndex, setQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerState>({ selected: null, revealed: false });
@@ -22,12 +25,47 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false);
   const [result, setResult] = useState<{ passed: boolean; xpGained: number; badge: string | null; allComplete: boolean } | null>(null);
   const [showNps, setShowNps] = useState(false);
+  const [ready, setReady] = useState(false);
 
-  if (!modul) return null;
+  useEffect(() => {
+    if (id && id !== rawId) {
+      router.replace(`/modul/${id}/quiz`);
+    }
+  }, [id, rawId, router]);
+
+  useEffect(() => {
+    if (!modul) return;
+    if (!canStartQuiz(modul.id)) {
+      router.replace(`/modul/${modul.id}/slides`);
+      return;
+    }
+    setReady(true);
+  }, [modul, router]);
+
+  if (!modul) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center text-gray-400 text-sm">
+        Modul nicht gefunden.
+      </div>
+    );
+  }
+  if (id && id !== rawId) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center text-gray-400 text-sm">
+        Wird geladen…
+      </div>
+    );
+  }
+  if (!ready) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center text-gray-400 text-sm">
+        Wird geladen…
+      </div>
+    );
+  }
 
   const question = modul.quiz[questionIndex];
   const totalQ = modul.quiz.length;
-  const progress = ((questionIndex + 1) / totalQ) * 100;
 
   const handleSelect = (label: string) => {
     if (answers.revealed) return;
@@ -61,6 +99,22 @@ export default function QuizPage() {
     setResult(null);
   };
 
+  const navigateAfterQuiz = () => {
+    const nextId = String(Number(modul.id) + 1).padStart(2, "0");
+    const nextModul = MODULES.find((m) => m.id === nextId);
+    if (result!.allComplete) router.push("/zertifikat");
+    else if (nextModul) router.push(`/modul/${nextId}`);
+    else router.push("/");
+  };
+
+  const handleContinue = () => {
+    if (result!.passed && !hasSubmittedNps(modul.id)) {
+      setShowNps(true);
+    } else {
+      navigateAfterQuiz();
+    }
+  };
+
   if (finished && result) {
     const correctCount = scores.filter(Boolean).length;
 
@@ -69,19 +123,10 @@ export default function QuizPage() {
         <NpsScreen
           moduleId={modul.id}
           onDone={() => {
-            const nextId = String(Number(modul.id) + 1).padStart(2, "0");
-            const nextModul = MODULES.find((m) => m.id === nextId);
-            if (result.allComplete) router.push("/zertifikat");
-            else if (nextModul) router.push(`/modul/${nextId}`);
-            else router.push("/");
+            markNpsSubmitted(modul.id);
+            navigateAfterQuiz();
           }}
-          onSkip={() => {
-            const nextId = String(Number(modul.id) + 1).padStart(2, "0");
-            const nextModul = MODULES.find((m) => m.id === nextId);
-            if (result.allComplete) router.push("/zertifikat");
-            else if (nextModul) router.push(`/modul/${nextId}`);
-            else router.push("/");
-          }}
+          onSkip={() => navigateAfterQuiz()}
         />
       );
     }
@@ -91,10 +136,12 @@ export default function QuizPage() {
         modul={modul}
         score={correctCount}
         total={totalQ}
+        perQuestion={scores}
         result={result}
         onRetry={handleRetry}
-        onContinue={() => setShowNps(true)}
+        onContinue={handleContinue}
         onDashboard={() => router.push("/")}
+        onReviewSlides={() => router.push(`/modul/${modul.id}/slides`)}
         hasNextModule={!!MODULES.find((m) => m.id === String(Number(modul.id) + 1).padStart(2, "0"))}
       />
     );
@@ -102,29 +149,15 @@ export default function QuizPage() {
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA] flex flex-col">
-      {/* Top bar */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => router.push(`/modul/${modul.id}/abschluss`)}
-            className="text-gray-400 hover:text-gray-600 p-1 -ml-1"
-          >
-            ←
-          </button>
-          <div className="flex-1">
-            <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
-              <span>Quiz: {modul.title}</span>
-              <span>Frage {questionIndex + 1} / {totalQ}</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
-              <div
-                className="h-2 rounded-full transition-all duration-400"
-                style={{ width: `${progress}%`, background: modul.colorHex }}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      <ModuleProgressHeader
+        title={modul.title}
+        subtitle={`Quiz: ${modul.title}`}
+        step={questionIndex + 1}
+        total={totalQ}
+        colorHex={modul.colorHex}
+        backHref={`/modul/${modul.id}/abschluss`}
+        backLabel="Zurück zum Modulabschluss"
+      />
 
       <div className="flex-1 max-w-2xl mx-auto w-full px-4 pt-6 pb-32">
         {/* Question */}
@@ -195,6 +228,8 @@ export default function QuizPage() {
         {/* Feedback */}
         {answers.revealed && (
           <div
+            role="status"
+            aria-live="polite"
             className={`mt-4 rounded-2xl p-4 ${
               isCorrect ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"
             }`}
@@ -231,18 +266,22 @@ function QuizResult({
   modul,
   score,
   total,
+  perQuestion,
   result,
   onRetry,
   onDashboard,
+  onReviewSlides,
   onContinue,
   hasNextModule,
 }: {
   modul: (typeof MODULES)[0];
   score: number;
   total: number;
+  perQuestion: boolean[];
   result: { passed: boolean; xpGained: number; badge: string | null; allComplete: boolean };
   onRetry: () => void;
   onDashboard: () => void;
+  onReviewSlides: () => void;
   onContinue: () => void;
   hasNextModule: boolean;
 }) {
@@ -262,13 +301,14 @@ function QuizResult({
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
           <div className="flex justify-center gap-2 mb-4">
-            {Array.from({ length: total }).map((_, i) => (
+            {perQuestion.map((correct, i) => (
               <div
                 key={i}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold text-white"
-                style={{ background: i < score ? "#22C55E" : "#EF4444" }}
+                style={{ background: correct ? "#22C55E" : "#EF4444" }}
+                title={`Frage ${i + 1}`}
               >
-                {i < score ? "✓" : "✗"}
+                {correct ? "✓" : "✗"}
               </div>
             ))}
           </div>
@@ -321,7 +361,13 @@ function QuizResult({
               Nochmals versuchen
             </button>
             <button
-              onClick={onContinue}
+              onClick={onReviewSlides}
+              className="w-full py-3 rounded-2xl font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 transition-all text-base mb-3"
+            >
+              Slides nochmals ansehen
+            </button>
+            <button
+              onClick={onDashboard}
               className="w-full py-3 rounded-2xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all text-base"
             >
               Zum Dashboard
@@ -350,14 +396,21 @@ function NpsScreen({
   const handleSubmit = async () => {
     if (selected === null) return;
     setSubmitting(true);
+    let ok = false;
     try {
-      await fetch("/api/nps", {
+      const res = await fetch("/api/nps", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ moduleId, score: selected, comment: comment.trim() || undefined }),
       });
+      ok = res.ok;
     } catch {
-      // fire and forget
+      ok = false;
+    }
+    setSubmitting(false);
+    if (!ok) {
+      onSkip();
+      return;
     }
     setSubmitted(true);
     setTimeout(onDone, 1200);
@@ -387,12 +440,12 @@ function NpsScreen({
             <span>Gar nicht</span>
             <span>Auf jeden Fall</span>
           </div>
-          <div className="grid grid-cols-11 gap-1 mb-4">
+          <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5 mb-4">
             {Array.from({ length: 11 }, (_, i) => (
               <button
                 key={i}
                 onClick={() => setSelected(i)}
-                className={`h-10 rounded-lg text-sm font-bold transition-all ${
+                className={`min-h-[44px] rounded-lg text-sm font-bold transition-all ${
                   selected === i
                     ? "bg-indigo-500 text-white scale-110 shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-600"

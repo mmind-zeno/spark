@@ -1,15 +1,41 @@
 "use client";
 
+import { useState } from "react";
 import type { RichSlide } from "@/data/modules-01";
 
 type Props = {
   slide: RichSlide;
   index: number;
   colorHex: string;
-  moduleEmoji: string;
 };
 
-export function SlideCard({ slide, index, colorHex, moduleEmoji }: Props) {
+function SlideImage({ src, alt, colorHex }: { src: string; alt: string; colorHex: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div
+        className="w-full flex items-center justify-center text-4xl rounded-2xl"
+        style={{ height: "180px", background: `linear-gradient(135deg, ${colorHex}33, ${colorHex}11)` }}
+        aria-label={alt}
+      >
+        📷
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-full object-cover aspect-[16/9]"
+      style={{ maxHeight: "220px" }}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+export function SlideCard({ slide, index, colorHex }: Props) {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Hero Banner */}
@@ -38,12 +64,7 @@ export function SlideCard({ slide, index, colorHex, moduleEmoji }: Props) {
             case "image":
               return (
                 <div key={bi} className="rounded-2xl overflow-hidden -mx-1">
-                  <img
-                    src={block.src}
-                    alt={block.alt}
-                    className="w-full object-cover"
-                    style={{ maxHeight: "220px" }}
-                  />
+                  <SlideImage src={block.src} alt={block.alt} colorHex={colorHex} />
                   {block.caption && (
                     <div className="text-center text-xs text-gray-400 mt-1 pb-1">{block.caption}</div>
                   )}
@@ -60,7 +81,7 @@ export function SlideCard({ slide, index, colorHex, moduleEmoji }: Props) {
 
             case "stat-grid":
               return (
-                <div key={bi} className="grid grid-cols-2 gap-3">
+                <div key={bi} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {block.stats.map((s, si) => (
                     <div
                       key={si}
@@ -211,7 +232,7 @@ export function SlideCard({ slide, index, colorHex, moduleEmoji }: Props) {
 
             case "two-col":
               return (
-                <div key={bi} className="grid grid-cols-2 gap-3">
+                <div key={bi} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {block.cols.map((col, ci) => (
                     <div
                       key={ci}

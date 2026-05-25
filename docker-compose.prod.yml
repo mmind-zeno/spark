@@ -5,6 +5,8 @@ services:
     restart: unless-stopped
     environment:
       - DATABASE_URL=postgresql://spark:spark@spark-postgres:5432/spark
+      - ADMIN_SECRET=${ADMIN_SECRET:-spark-admin-change-me}
+      - NEXT_PUBLIC_BASE_URL=${NEXT_PUBLIC_BASE_URL:-https://spark.mmind.space}
     networks:
       - spark_internal
       - bioavatar_internal

@@ -2,20 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { MODULES, TOTAL_MAX_XP } from "@/data/modules";
-import { getProgress, getModuleStatus, getCompletedModulesCount, type SparkProgress } from "@/lib/progress";
+import { MODULES, TOTAL_MAX_XP, BADGES } from "@/data/modules";
+import { getProgress, getModuleStatus, getCompletedModulesCount, canAccessCertificate, resetProgress, PROGRESS_EVENT, type SparkProgress } from "@/lib/progress";
+import { SyncPanel } from "@/components/SyncPanel";
 
 export default function Dashboard() {
-  const [progress, setProgress] = useState<SparkProgress | null>(null);
+  const [progress, setProgress] = useState<SparkProgress>(() => getProgress());
 
   useEffect(() => {
-    setProgress(getProgress());
+    const refresh = () => setProgress(getProgress());
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener(PROGRESS_EVENT, refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener(PROGRESS_EVENT, refresh);
+    };
   }, []);
 
-  const totalXP = progress?.totalXP ?? 0;
-  const completedCount = progress ? getCompletedModulesCount() : 0;
+  const totalXP = progress.totalXP;
+  const completedCount = getCompletedModulesCount();
   const xpPercent = Math.min(100, Math.round((totalXP / TOTAL_MAX_XP) * 100));
-  const canCertificate = progress?.badges.includes("ai-graduate") ?? false;
+  const canCertificate = canAccessCertificate();
+
+  const handleReset = () => {
+    if (!window.confirm("Fortschritt wirklich zurücksetzen? Alle XP, Badges und Quiz-Ergebnisse gehen verloren.")) return;
+    resetProgress();
+    setProgress(getProgress());
+  };
 
   return (
     <div className="min-h-dvh bg-[#FAFAFA]">
@@ -70,7 +85,7 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2 mt-4">
             {MODULES.map((m) => {
-              const status = progress ? getModuleStatus(m.id) : "not-started";
+              const status = getModuleStatus(m.id);
               return (
                 <div
                   key={m.id}
@@ -79,7 +94,7 @@ export default function Dashboard() {
                     background:
                       status === "completed"
                         ? m.colorHex
-                        : status === "in-progress"
+                        : status === "in-progress" || status === "quiz-pending"
                         ? `${m.colorHex}66`
                         : "#E5E7EB",
                   }}
@@ -90,16 +105,12 @@ export default function Dashboard() {
         </div>
 
         {/* Badges */}
-        {progress && progress.badges.length > 0 && (
+        {progress.badges.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
             <div className="text-sm font-semibold text-gray-500 mb-3">Gesammelte Badges</div>
             <div className="flex flex-wrap gap-2">
               {progress.badges.map((badgeId) => {
-                const allBadges = [
-                  ...MODULES.map((m) => ({ id: m.badge, emoji: m.badgeEmoji, name: m.badgeName })),
-                  { id: "ai-graduate", emoji: "🎓", name: "AI Graduate" },
-                ];
-                const badge = allBadges.find((b) => b.id === badgeId);
+                const badge = BADGES.find((b) => b.id === badgeId);
                 if (!badge) return null;
                 return (
                   <div key={badgeId} className="flex items-center gap-1.5 bg-gray-50 rounded-xl px-3 py-1.5">
@@ -116,11 +127,20 @@ export default function Dashboard() {
         <div className="space-y-3 mb-6">
           <div className="text-sm font-semibold text-gray-500 mb-2">Module</div>
           {MODULES.map((m) => {
-            const status = progress ? getModuleStatus(m.id) : "not-started";
-            const slidesDone = progress?.modules[m.id]?.slidesRead.length ?? 0;
+            const status = getModuleStatus(m.id);
+            const slidesDone = progress.modules[m.id]?.slidesRead.length ?? 0;
+            const moduleHref =
+              status === "quiz-pending"
+                ? `/modul/${m.id}/quiz`
+                : status === "completed"
+                ? `/modul/${m.id}`
+                : `/modul/${m.id}`;
             return (
-              <Link key={m.id} href={`/modul/${m.id}`}>
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer active:scale-[0.99]">
+              <Link
+                key={m.id}
+                href={moduleHref}
+                className="flex bg-white rounded-2xl shadow-sm border border-gray-100 p-4 items-center gap-4 hover:shadow-md transition-shadow active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+              >
                   <div
                     className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl shrink-0"
                     style={{ background: `${m.colorHex}18` }}
@@ -132,6 +152,7 @@ export default function Dashboard() {
                       <div>
                         <div className="text-xs text-gray-400 font-medium">Modul {m.number}</div>
                         <div className="font-semibold text-gray-900 leading-tight">{m.title}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">von {m.author}</div>
                       </div>
                       <StatusBadge status={status} color={m.colorHex} />
                     </div>
@@ -149,35 +170,53 @@ export default function Dashboard() {
                         <div className="text-xs text-gray-400 mt-1">{slidesDone} / {m.slides.length} Slides</div>
                       </div>
                     )}
+                    {status === "quiz-pending" && (
+                      <div className="text-xs text-amber-600 mt-1 font-medium">Quiz ausstehend →</div>
+                    )}
                   </div>
-                </div>
               </Link>
             );
           })}
         </div>
 
+        <SyncPanel onImported={() => setProgress(getProgress())} />
+
         {/* Certificate CTA */}
-        <Link href="/zertifikat">
+        {canCertificate ? (
+          <Link href="/zertifikat">
+            <div className="rounded-2xl p-5 flex items-center gap-4 transition-all bg-indigo-500 shadow-md cursor-pointer hover:bg-indigo-600 active:scale-[0.99]">
+              <span className="text-3xl">🎓</span>
+              <div>
+                <div className="font-bold text-lg text-white">Zertifikat herunterladen</div>
+                <div className="text-sm text-indigo-100">
+                  Alle 5 Module abgeschlossen — jetzt Zertifikat holen!
+                </div>
+              </div>
+            </div>
+          </Link>
+        ) : (
           <div
-            className={`rounded-2xl p-5 flex items-center gap-4 transition-all ${
-              canCertificate
-                ? "bg-indigo-500 shadow-md cursor-pointer hover:bg-indigo-600 active:scale-[0.99]"
-                : "bg-gray-100 cursor-not-allowed opacity-60"
-            }`}
+            className="rounded-2xl p-5 flex items-center gap-4 bg-gray-100 opacity-60 cursor-not-allowed"
+            aria-disabled="true"
           >
             <span className="text-3xl">🎓</span>
             <div>
-              <div className={`font-bold text-lg ${canCertificate ? "text-white" : "text-gray-500"}`}>
-                Zertifikat herunterladen
-              </div>
-              <div className={`text-sm ${canCertificate ? "text-indigo-100" : "text-gray-400"}`}>
-                {canCertificate
-                  ? "Alle 5 Module abgeschlossen — jetzt Zertifikat holen!"
-                  : `Noch ${5 - completedCount} Module bis zum Zertifikat`}
+              <div className="font-bold text-lg text-gray-500">Zertifikat herunterladen</div>
+              <div className="text-sm text-gray-400">
+                Noch {5 - completedCount} Module bis zum Zertifikat
               </div>
             </div>
           </div>
-        </Link>
+        )}
+
+        {progress.totalXP > 0 && (
+          <button
+            onClick={handleReset}
+            className="mt-6 w-full py-2 text-xs text-gray-400 hover:text-red-500 transition-colors"
+          >
+            Fortschritt zurücksetzen
+          </button>
+        )}
 
         <div className="mt-8 text-center text-xs text-gray-400 space-y-1">
           <div>Powered by MMIND GmbH · mmind.ai</div>
@@ -200,7 +239,7 @@ function StatusBadge({
   status,
   color,
 }: {
-  status: "not-started" | "in-progress" | "completed";
+  status: "not-started" | "in-progress" | "quiz-pending" | "completed";
   color: string;
 }) {
   if (status === "completed") {
@@ -210,6 +249,13 @@ function StatusBadge({
         style={{ background: color }}
       >
         ✓ Fertig
+      </span>
+    );
+  }
+  if (status === "quiz-pending") {
+    return (
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 shrink-0">
+        Quiz
       </span>
     );
   }

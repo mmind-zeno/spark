@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 
 export default function DatenschutzPage() {
@@ -13,77 +11,105 @@ export default function DatenschutzPage() {
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Datenschutzerklärung</h1>
 
         <div className="space-y-6 text-sm text-gray-700 leading-relaxed">
-
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Verantwortliche Stelle</h2>
             <p>
-              MMIND GmbH<br />
-              Industriestrasse 24<br />
-              9487 Schaan, Liechtenstein<br />
-              E-Mail: info@mmind.ai<br />
+              MMIND GmbH
+              <br />
+              Industriestrasse 24
+              <br />
+              9487 Schaan, Liechtenstein
+              <br />
+              E-Mail: info@mmind.ai
+              <br />
               Web: mmind.ai
             </p>
           </section>
 
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Welche Daten wir verarbeiten</h2>
-            <p className="mb-2">SPARK erhebt nur anonyme Nutzungsdaten ohne Personenbezug:</p>
+            <p className="mb-2">SPARK erhebt nur die für den Betrieb nötigen Daten — ohne Login:</p>
             <ul className="space-y-2">
-              <li className="flex gap-2"><span className="text-indigo-500 shrink-0">•</span><span><strong>Lernfortschritt:</strong> Wird ausschliesslich lokal in deinem Browser gespeichert (localStorage). Wir haben keinen Zugriff darauf.</span></li>
-              <li className="flex gap-2"><span className="text-indigo-500 shrink-0">•</span><span><strong>Modul-Aufrufe:</strong> Beim Öffnen eines Moduls wird die Modul-ID anonym protokolliert (kein Nutzer-Identifier, keine IP-Adresse gespeichert).</span></li>
-              <li className="flex gap-2"><span className="text-indigo-500 shrink-0">•</span><span><strong>Zertifikat-Downloads:</strong> Anzahl der heruntergeladenen Zertifikate (Gesamtzähler, ohne Personenbezug). Der Name im Zertifikat wird nicht an uns übermittelt — die PDF-Erstellung erfolgt vollständig in deinem Browser.</span></li>
-              <li className="flex gap-2"><span className="text-indigo-500 shrink-0">•</span><span><strong>NPS-Feedback:</strong> Falls du nach dem Quiz eine Bewertung (0–10) und optionalen Kommentar abgibst, wird dies anonym gespeichert. Es wird kein Name, keine E-Mail oder andere personenbezogene Information erfasst.</span></li>
+              <li className="flex gap-2">
+                <span className="text-indigo-500 shrink-0">•</span>
+                <span>
+                  <strong>Lernfortschritt:</strong> Primär lokal in deinem Browser (localStorage). Optional kannst du
+                  den Fortschritt per Sync-Code auf unseren Server hochladen (7 Tage Speicherung, dann automatische
+                  Löschung).
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-500 shrink-0">•</span>
+                <span>
+                  <strong>Modul-Aufrufe:</strong> Beim ersten Öffnen eines Moduls pro Sitzung wird die Modul-ID anonym
+                  protokolliert (Erasmus-KPI).
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-500 shrink-0">•</span>
+                <span>
+                  <strong>Zertifikat:</strong> Beim Download wird dein Name und der erreichte XP-Stand zur
+                  Verifikation in unserer Datenbank gespeichert. Die PDF-Erstellung erfolgt in deinem Browser; der
+                  Name erscheint auf dem Zertifikat und ist über die Verifikations-ID online prüfbar.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-500 shrink-0">•</span>
+                <span>
+                  <strong>NPS-Feedback:</strong> Optional nach bestandenem Quiz: Bewertung (0–10) und optionaler
+                  Kommentar, anonym ohne Nutzer-ID.
+                </span>
+              </li>
+              <li className="flex gap-2">
+                <span className="text-indigo-500 shrink-0">•</span>
+                <span>
+                  <strong>Offline-Modus:</strong> Ein Service Worker speichert besuchte Seiten und Bilder lokal auf
+                  deinem Gerät — keine Übermittlung an Dritte.
+                </span>
+              </li>
             </ul>
           </section>
 
           <section>
-            <h2 className="font-bold text-gray-900 text-base mb-2">Kein Login, keine Cookies</h2>
+            <h2 className="font-bold text-gray-900 text-base mb-2">Kein Login, keine Tracking-Cookies</h2>
             <p>
-              SPARK benötigt keine Registrierung und setzt keine Tracking-Cookies. Es werden keine Cookies für Werbezwecke oder Cross-Site-Tracking verwendet.
+              SPARK benötigt keine Registrierung und setzt keine Werbe- oder Tracking-Cookies. Technisch notwendige
+              lokale Speicherung (localStorage, Service Worker Cache) dient ausschliesslich der Lernfunktion.
             </p>
           </section>
 
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Datenspeicherung</h2>
             <p>
-              Die anonymen Nutzungsstatistiken werden in einer PostgreSQL-Datenbank auf einem Server in der EU (Hetzner, Deutschland) gespeichert. Es findet keine Weitergabe an Dritte statt.
+              Serverseitige Statistiken und Zertifikatsdaten werden in PostgreSQL auf einem Server in der EU (Hetzner,
+              Deutschland) gespeichert. Es findet keine Weitergabe an Dritte statt.
             </p>
           </section>
 
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Rechtsgrundlage</h2>
             <p>
-              Die Verarbeitung anonymer Nutzungsstatistiken erfolgt auf Basis von berechtigtem Interesse (Art. 6 Abs. 1 lit. f DSGVO) zur Qualitätssicherung und Verbesserung der Trainingsplattform im Rahmen des Erasmus-Programms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="font-bold text-gray-900 text-base mb-2">Hosting</h2>
-            <p>
-              Diese Website wird auf Servern der Hetzner Online GmbH (Deutschland) betrieben. Hetzner ist nach DSGVO als Auftragsverarbeiter tätig.
+              Anonyme Nutzungsstatistiken: berechtigtes Interesse (Art. 6 Abs. 1 lit. f DSGVO). Zertifikatsname:
+              Vertragserfüllung bzw. berechtigtes Interesse an verifizierbaren Abschlussnachweisen im Erasmus-Programm.
             </p>
           </section>
 
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Deine Rechte</h2>
             <p className="mb-2">
-              Da wir keine personenbezogenen Daten erheben, ist eine Auskunft oder Löschung zu einzelnen Nutzern nicht möglich. Du kannst deinen lokalen Lernfortschritt jederzeit selbst löschen:
-            </p>
-            <div className="bg-gray-100 rounded-xl px-4 py-3 font-mono text-xs text-gray-700">
-              Browsereinstellungen → Websitedaten löschen → spark.mmind.space
-            </div>
-            <p className="mt-3">
-              Bei Fragen zum Datenschutz wende dich an: <a href="mailto:info@mmind.ai" className="text-indigo-500 hover:underline">info@mmind.ai</a>
+              Lokalen Fortschritt kannst du jederzeit im Dashboard zurücksetzen oder in den Browsereinstellungen
+              löschen. Bei Zertifikatsdaten wende dich an{" "}
+              <a href="mailto:info@mmind.ai" className="text-indigo-500 hover:underline">
+                info@mmind.ai
+              </a>
+              .
             </p>
           </section>
 
           <section>
             <h2 className="font-bold text-gray-900 text-base mb-2">Änderungen</h2>
-            <p>
-              Diese Datenschutzerklärung gilt ab Mai 2025. Bei wesentlichen Änderungen wird die Seite aktualisiert.
-            </p>
+            <p>Diese Datenschutzerklärung gilt ab Mai 2025. Bei wesentlichen Änderungen wird die Seite aktualisiert.</p>
           </section>
-
         </div>
 
         <div className="mt-10 text-center text-xs text-gray-400">

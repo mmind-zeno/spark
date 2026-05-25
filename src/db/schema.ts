@@ -19,3 +19,21 @@ export const moduleViews = pgTable("module_views", {
   moduleId: text("module_id").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const progressSnapshots = pgTable("progress_snapshots", {
+  id: serial("id").primaryKey(),
+  syncCode: text("sync_code").notNull().unique(),
+  data: text("data").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
+export const certificates = pgTable("certificates", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  totalXp: integer("total_xp").notNull(),
+  modulesCompleted: integer("modules_completed").notNull().default(5),
+  completionHash: text("completion_hash").unique(),
+  downloadCounted: integer("download_counted").notNull().default(0),
+  issuedAt: timestamp("issued_at").notNull().defaultNow(),
+});

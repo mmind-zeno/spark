@@ -12,30 +12,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Swipe animations */
-@keyframes slide-in-right {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slide-in-left {
-  from { transform: translateX(-100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes slide-out-right {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(100%); opacity: 0; }
-}
-
-@keyframes slide-out-left {
-  from { transform: translateX(0); opacity: 1; }
-  to { transform: translateX(-100%); opacity: 0; }
-}
-
-.slide-enter-right { animation: slide-in-right 0.3s ease forwards; }
-.slide-enter-left { animation: slide-in-left 0.3s ease forwards; }
-
 /* XP Toast */
 @keyframes xp-float {
   0% { transform: translateY(0) scale(0.8); opacity: 0; }

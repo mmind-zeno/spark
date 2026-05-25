@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { MODULES, XP_REWARDS } from "@/data/modules";
+import { canStartQuiz } from "@/lib/progress";
 
 export default function AbschlussScreen() {
   const params = useParams();
@@ -13,7 +14,12 @@ export default function AbschlussScreen() {
   const confettiDone = useRef(false);
 
   useEffect(() => {
-    if (!modul || confettiDone.current) return;
+    if (!modul) return;
+    if (!canStartQuiz(modul.id)) {
+      router.replace(`/modul/${modul.id}/slides`);
+      return;
+    }
+    if (confettiDone.current) return;
     confettiDone.current = true;
 
     setTimeout(() => setShowBadge(true), 400);
@@ -27,7 +33,7 @@ export default function AbschlussScreen() {
         colors: [modul.colorHex, "#6366F1", "#F59E0B", "#22C55E"],
       });
     });
-  }, [modul]);
+  }, [modul, router]);
 
   if (!modul) return null;
 

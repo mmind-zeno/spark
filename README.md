@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SPARK — KI-Trainingsplattform (Erasmus)
 
-## Getting Started
+Gamifizierte Web-Lernplattform mit 5 KI-Modulen, Quiz, XP, Badges und PDF-Zertifikat.
 
-First, run the development server:
+**Live:** https://spark.mmind.space
+
+## Features
+
+- 5 Trainingsmodule mit Slides, Quiz und Badges
+- XP-System (max. 1.775 XP) ohne Login — Fortschritt in localStorage
+- Cross-Device Sync via Sync-Code
+- PDF-Zertifikat mit QR-Verifizierung
+- Admin KPI-Dashboard (Downloads, NPS, Module-Views)
+- PWA mit Offline-Fallback
+
+## Development
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+PostgreSQL für APIs (Downloads, NPS, Sync):
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# DATABASE_URL in .env.local setzen
+npm run db:push
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deploy
 
-## Learn More
+Siehe [CLAUDE.md](./CLAUDE.md) für vollständige Server-Anleitung (Hetzner, Docker, Caddy).
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 16 · Tailwind v4 · Framer Motion · pdf-lib · Drizzle · PostgreSQL

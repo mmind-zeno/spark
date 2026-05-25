@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+scripts/test-*.pdf
+scripts/final-test-*.pdf
+scripts/test-*.mjs
 
 # debug
 npm-debug.log*

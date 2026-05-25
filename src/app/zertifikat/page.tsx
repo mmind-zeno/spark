@@ -2,7 +2,16 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { canAccessCertificate, getProgress } from "@/lib/progress";
+import Link from "next/link";
+import {
+  canAccessCertificate,
+  getProgress,
+  setLastCertId,
+  getLastCertId,
+  incrementLocalDownloadCount,
+} from "@/lib/progress";
+import { generateCertificatePdf } from "@/lib/certificate-pdf";
+import { sanitizeFilename } from "@/lib/pdf-text";
 
 export default function ZertifikatPage() {
   const router = useRouter();
@@ -11,221 +20,116 @@ export default function ZertifikatPage() {
   const [error, setError] = useState<string | null>(null);
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [totalXP, setTotalXP] = useState(0);
+  const [lastCertId, setLastCertIdState] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const access = canAccessCertificate();
-    setHasAccess(access);
+    setHasAccess(canAccessCertificate());
     const p = getProgress();
     setTotalXP(p.totalXP);
+    setLastCertIdState(getLastCertId());
+    setOffline(typeof navigator !== "undefined" && !navigator.onLine);
+    const onOnline = () => setOffline(false);
+    const onOffline = () => setOffline(true);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
   }, []);
 
   const handleDownload = async () => {
-    if (!name.trim()) {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
       nameInputRef.current?.focus();
       return;
     }
+    if (offline) {
+      setError("PDF-Erstellung benötigt eine Internetverbindung (Zertifikat-Registrierung).");
+      return;
+    }
+
     setGenerating(true);
     setError(null);
 
     try {
-      const { PDFDocument, rgb, StandardFonts } = await import("pdf-lib");
-
-      const pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([842, 595]); // A4 landscape
-      const { width, height } = page.getSize();
-
-      const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const regularFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-      const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-
-      // Background
-      page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(0.98, 0.98, 1) });
-
-      // Try to embed background image (fal.ai returns PNG despite .jpg extension)
-      try {
-        const bgRes = await fetch("/cert-bg.jpg");
-        if (bgRes.ok) {
-          const bgBytes = new Uint8Array(await bgRes.arrayBuffer());
-          // Detect PNG by magic bytes: 89 50 4E 47
-          const isPng = bgBytes[0] === 0x89 && bgBytes[1] === 0x50;
-          const bgImage = isPng
-            ? await pdfDoc.embedPng(bgBytes)
-            : await pdfDoc.embedJpg(bgBytes);
-          page.drawImage(bgImage, { x: 0, y: 0, width, height, opacity: 0.12 });
-        }
-      } catch {
-        // keep plain background
+      const progress = getProgress();
+      const regRes = await fetch("/api/zertifikat/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          progress,
+          existingCertId: getLastCertId() ?? undefined,
+        }),
+      });
+      const regData = await regRes.json();
+      if (!regRes.ok || !regData.ok) {
+        throw new Error(regData.error ?? "Zertifikat konnte nicht registriert werden");
       }
 
-      // Border frame (indigo-500 = #6366F1)
-      const indigo = rgb(0.388, 0.4, 0.945);
-      const indigoLight = rgb(0.79, 0.80, 0.98);
+      const certId: string = regData.id;
+      const verifyUrl: string = regData.verifyUrl;
 
-      page.drawRectangle({ x: 0, y: height - 8, width, height: 8, color: indigo });
-      page.drawRectangle({ x: 0, y: 0, width, height: 8, color: indigo });
-      page.drawRectangle({ x: 0, y: 0, width: 8, height, color: indigo });
-      page.drawRectangle({ x: width - 8, y: 0, width: 8, height, color: indigo });
-
-      // Inner decorative border
-      page.drawRectangle({ x: 16, y: 16, width: width - 32, height: height - 32, color: rgb(1,1,1), opacity: 0 });
-      page.drawLine({ start: { x: 20, y: height - 20 }, end: { x: width - 20, y: height - 20 }, thickness: 0.5, color: indigoLight, opacity: 0.5 });
-      page.drawLine({ start: { x: 20, y: 20 }, end: { x: width - 20, y: 20 }, thickness: 0.5, color: indigoLight, opacity: 0.5 });
-
-      // Header: SPARK
-      page.drawText("SPARK", {
-        x: 60,
-        y: height - 62,
-        size: 24,
-        font: boldFont,
-        color: indigo,
-      });
-      page.drawText("KI-Trainingsplattform  |  Erasmus Programm  |  MMIND GmbH", {
-        x: 60,
-        y: height - 82,
-        size: 10,
-        font: regularFont,
-        color: rgb(0.55, 0.55, 0.55),
+      const pdfBytes = await generateCertificatePdf({
+        name: trimmedName,
+        totalXP: progress.totalXP,
+        certId,
+        verifyUrl,
       });
 
-      // Divider line
-      page.drawLine({
-        start: { x: 60, y: height - 95 },
-        end: { x: width - 60, y: height - 95 },
-        thickness: 1,
-        color: indigoLight,
-        opacity: 0.6,
-      });
-
-      // Certificate title
-      page.drawText("Zertifikat", {
-        x: width / 2 - boldFont.widthOfTextAtSize("Zertifikat", 48) / 2,
-        y: height - 175,
-        size: 48,
-        font: boldFont,
-        color: rgb(0.1, 0.1, 0.15),
-      });
-
-      const subtitle = "der erfolgreichen Teilnahme";
-      page.drawText(subtitle, {
-        x: width / 2 - italicFont.widthOfTextAtSize(subtitle, 18) / 2,
-        y: height - 208,
-        size: 18,
-        font: italicFont,
-        color: rgb(0.45, 0.45, 0.45),
-      });
-
-      // Name
-      const nameWidth = boldFont.widthOfTextAtSize(name, 36);
-      page.drawText(name, {
-        x: width / 2 - nameWidth / 2,
-        y: height - 268,
-        size: 36,
-        font: boldFont,
-        color: indigo,
-      });
-      page.drawLine({
-        start: { x: width / 2 - nameWidth / 2 - 15, y: height - 279 },
-        end: { x: width / 2 + nameWidth / 2 + 15, y: height - 279 },
-        thickness: 1.5,
-        color: indigo,
-        opacity: 0.35,
-      });
-
-      // Description
-      const desc = "hat das SPARK KI-Training erfolgreich abgeschlossen";
-      page.drawText(desc, {
-        x: width / 2 - regularFont.widthOfTextAtSize(desc, 15) / 2,
-        y: height - 312,
-        size: 15,
-        font: regularFont,
-        color: rgb(0.3, 0.3, 0.3),
-      });
-
-      // Module badges (text only, no emoji)
-      const moduleTitles = ["EU AI Act", "ChatGPT Deep Dive", "KI & Ernaehrung", "KI & Umwelt", "KI & Berufe"];
-      const badgeW = 138;
-      const badgeH = 32;
-      const badgeY = height - 375;
-      const totalBadgesW = moduleTitles.length * badgeW + (moduleTitles.length - 1) * 8;
-      const badgeStartX = (width - totalBadgesW) / 2;
-
-      moduleTitles.forEach((title, i) => {
-        const bx = badgeStartX + i * (badgeW + 8);
-        page.drawRectangle({ x: bx, y: badgeY, width: badgeW, height: badgeH, color: rgb(0.94, 0.94, 0.99), borderColor: indigoLight, borderWidth: 1 });
-        const tw = boldFont.widthOfTextAtSize(title, 9);
-        page.drawText(title, { x: bx + badgeW / 2 - tw / 2, y: badgeY + 11, size: 9, font: boldFont, color: indigo });
-      });
-
-      // XP row
-      const xpText = `${totalXP} XP erreicht`;
-      page.drawText(xpText, {
-        x: width / 2 - boldFont.widthOfTextAtSize(xpText, 13) / 2,
-        y: badgeY - 30,
-        size: 13,
-        font: boldFont,
-        color: indigo,
-      });
-
-      // Footer divider
-      page.drawLine({
-        start: { x: 60, y: 58 },
-        end: { x: width - 60, y: 58 },
-        thickness: 0.5,
-        color: indigoLight,
-        opacity: 0.5,
-      });
-
-      // Date
-      const date = new Date().toLocaleDateString("de-CH", { year: "numeric", month: "long", day: "numeric" });
-      page.drawText(`Ausgestellt am ${date}`, {
-        x: 60,
-        y: 38,
-        size: 10,
-        font: regularFont,
-        color: rgb(0.55, 0.55, 0.55),
-      });
-
-      // MMIND
-      const sig = "MMIND GmbH  |  Schaan, Liechtenstein  |  mmind.ai";
-      page.drawText(sig, {
-        x: width - 60 - regularFont.widthOfTextAtSize(sig, 10),
-        y: 38,
-        size: 10,
-        font: regularFont,
-        color: rgb(0.55, 0.55, 0.55),
-      });
-
-      // Save + download
-      const pdfBytes = await pdfDoc.save();
       const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `SPARK-Zertifikat-${name.replace(/\s+/g, "-")}.pdf`;
+      a.download = `SPARK-Zertifikat-${sanitizeFilename(trimmedName)}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-      await fetch("/api/zertifikat/download", { method: "POST" }).catch(() => {});
+      setLastCertId(certId);
+      setLastCertIdState(certId);
+      incrementLocalDownloadCount();
+
+      // Re-download KPI sync (idempotent per certId)
+      await fetch("/api/zertifikat/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ certId }),
+      }).catch(() => {});
     } catch (err) {
       console.error("PDF generation error:", err);
-      setError("PDF konnte nicht erstellt werden. Bitte versuche es erneut.");
+      setError(
+        err instanceof Error ? err.message : "PDF konnte nicht erstellt werden. Bitte versuche es erneut."
+      );
     } finally {
       setGenerating(false);
     }
   };
 
-  if (hasAccess === null) return null;
+  if (hasAccess === null) {
+    return (
+      <div className="min-h-dvh flex items-center justify-center text-gray-400 text-sm">
+        Wird geladen…
+      </div>
+    );
+  }
 
   if (!hasAccess) {
     return (
       <div className="min-h-dvh bg-[#FAFAFA] flex flex-col items-center justify-center px-4 text-center">
         <div className="text-5xl mb-4">🔒</div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">Noch nicht freigeschaltet</h1>
-        <p className="text-gray-500 text-sm mb-6">Schliesse alle 5 Module inkl. Quiz ab, um dein Zertifikat zu erhalten.</p>
-        <button onClick={() => router.push("/")} className="px-6 py-3 rounded-2xl font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-all">
+        <p className="text-gray-500 text-sm mb-6">
+          Schliesse alle 5 Module inkl. Quiz ab, um dein Zertifikat zu erhalten.
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-6 py-3 rounded-2xl font-semibold text-white bg-indigo-500 hover:bg-indigo-600 transition-all"
+        >
           Zum Dashboard
         </button>
       </div>
@@ -241,7 +145,12 @@ export default function ZertifikatPage() {
           <p className="text-gray-500 text-sm">Alle 5 Module + Quizzes abgeschlossen — herzlichen Glückwunsch!</p>
         </div>
 
-        {/* Preview */}
+        {offline && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 mb-4">
+            Du bist offline. Verbinde dich mit dem Internet, um das Zertifikat zu registrieren und herunterzuladen.
+          </div>
+        )}
+
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
           <div className="h-2 bg-indigo-500" />
           <div className="p-6 text-center">
@@ -254,26 +163,41 @@ export default function ZertifikatPage() {
             <div className="text-xs text-gray-400 mb-4">hat das SPARK KI-Training abgeschlossen</div>
             <div className="flex justify-center gap-2 flex-wrap mb-3">
               {["🏛️", "💬", "🥗", "🌍", "🚀"].map((e) => (
-                <span key={e} className="bg-indigo-50 rounded-lg px-2 py-1 text-sm">{e}</span>
+                <span key={e} className="bg-indigo-50 rounded-lg px-2 py-1 text-sm">
+                  {e}
+                </span>
               ))}
             </div>
             <div className="text-xs text-indigo-500 font-semibold">{totalXP} XP · MMIND GmbH</div>
           </div>
         </div>
 
-        {/* Name Input */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Dein Name für das Zertifikat</label>
+          <label htmlFor="cert-name" className="block text-sm font-semibold text-gray-700 mb-2">
+            Dein Name für das Zertifikat
+          </label>
           <input
+            id="cert-name"
             ref={nameInputRef}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="z.B. Anna Muster"
+            maxLength={100}
             className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
             onKeyDown={(e) => e.key === "Enter" && handleDownload()}
           />
         </div>
+
+        {lastCertId && (
+          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 mb-4">
+            <div className="font-semibold mb-1">Letztes Zertifikat</div>
+            <div className="text-xs text-green-700 font-mono">{lastCertId}</div>
+            <Link href={`/verify/${lastCertId}`} className="text-xs text-indigo-600 underline mt-1 inline-block">
+              Online verifizieren →
+            </Link>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 mb-4">
@@ -283,10 +207,10 @@ export default function ZertifikatPage() {
 
         <button
           onClick={handleDownload}
-          disabled={generating || !name.trim()}
+          disabled={generating || !name.trim() || offline}
           className="w-full py-4 rounded-2xl font-bold text-white text-lg bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
         >
-          {generating ? "PDF wird erstellt..." : "PDF herunterladen"}
+          {generating ? "PDF wird erstellt…" : lastCertId ? "PDF erneut herunterladen" : "PDF herunterladen"}
         </button>
 
         <button
@@ -295,6 +219,13 @@ export default function ZertifikatPage() {
         >
           Zurück zum Dashboard
         </button>
+
+        <Link
+          href="/verify"
+          className="block text-center mt-4 text-sm text-indigo-500 hover:text-indigo-700"
+        >
+          Zertifikat verifizieren →
+        </Link>
       </div>
     </div>
   );
