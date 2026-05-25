@@ -1,4 +1,5 @@
 // Generate local placeholder PNG assets (no API key required)
+// WARNING: Overwrites real fal.ai assets — only use when starting from scratch!
 // Usage: npm run assets:placeholders
 import sharp from "sharp";
 import fs from "fs";

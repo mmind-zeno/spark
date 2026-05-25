@@ -24,7 +24,7 @@ Gamifizierte Web-Lernplattform für das Erasmus-Programm. 5 KI-Trainingsmodule m
 npm run dev              # Development
 npm run build            # Production build
 npm run db:push          # Schema pushen (Drizzle)
-npm run assets:placeholders  # Placeholder-Bilder (sharp, im Dockerfile)
+npm run assets:placeholders  # Nur bei leerem Projekt — überschreibt echte Bilder!
 ```
 
 ## Struktur
@@ -57,7 +57,7 @@ src/
 scripts/
   init-db.sql                   # Vollständiges Schema
   migrate-certificates.sql      # Migration bestehender Deployments
-  generate-placeholders.mjs     # Asset-Generierung im Docker-Build
+  generate-placeholders.mjs     # Nur Dev-Fallback — nicht im Docker-Build
 ```
 
 ## Gamification
