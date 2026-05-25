@@ -7,7 +7,7 @@ Gamifizierte Web-Lernplattform für das Erasmus-Programm. 5 KI-Trainingsmodule m
 **Version:** v1.0.0  
 **Server:** 91.98.127.31 (Erasmus-Server, `ssh -i ~/.ssh/ssh-kimai-zeno root@91.98.127.31`)  
 **Deploy-Pfad:** /opt/spark  
-**GitHub:** mmind-zeno/spark (nach Push)
+**GitHub:** https://github.com/mmind-zeno/spark
 
 ## Stack
 - Next.js 16 (App Router, `output: standalone`)
