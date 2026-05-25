@@ -2,11 +2,11 @@
 
 Gamifizierte Web-Lernplattform mit 5 KI-Modulen, Quiz, XP, Badges und PDF-Zertifikat.
 
-**Live:** https://spark.mmind.space
+**Live:** https://spark.mmind.space · **Repo:** https://github.com/mmind-zeno/spark · **v1.0.1**
 
 ## Features
 
-- 5 Trainingsmodule mit Slides, Quiz und Badges
+- 5 Trainingsmodule mit Rich Slides (fal.ai Illustrationen), Quiz und Badges
 - XP-System (max. 1.775 XP) ohne Login — Fortschritt in localStorage
 - Cross-Device Sync via Sync-Code
 - PDF-Zertifikat mit QR-Verifizierung
@@ -28,9 +28,19 @@ PostgreSQL für APIs (Downloads, NPS, Sync):
 npm run db:push
 ```
 
+Neue Bilder generieren (fal.ai API-Key nötig):
+
+```bash
+npm run assets:ai
+```
+
 ## Deploy
 
-Siehe [CLAUDE.md](./CLAUDE.md) für vollständige Server-Anleitung (Hetzner, Docker, Caddy).
+```powershell
+.\scripts\deploy.ps1
+```
+
+Details: [CLAUDE.md](./CLAUDE.md)
 
 ## Stack
 

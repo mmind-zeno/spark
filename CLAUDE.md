@@ -4,10 +4,11 @@
 Gamifizierte Web-Lernplattform für das Erasmus-Programm. 5 KI-Trainingsmodule mit Quiz, XP-System, Badges und PDF-Zertifikat. Mobile-first, kein Login.
 
 **Domain:** https://spark.mmind.space  
-**Version:** v1.0.0  
+**Version:** v1.0.1  
 **Server:** 91.98.127.31 (Erasmus-Server, `ssh -i ~/.ssh/ssh-kimai-zeno root@91.98.127.31`)  
 **Deploy-Pfad:** /opt/spark  
-**GitHub:** https://github.com/mmind-zeno/spark
+**GitHub:** https://github.com/mmind-zeno/spark  
+**Deploy-Script:** `.\scripts\deploy.ps1` (Windows)
 
 ## Stack
 - Next.js 16 (App Router, `output: standalone`)
@@ -24,8 +25,28 @@ Gamifizierte Web-Lernplattform für das Erasmus-Programm. 5 KI-Trainingsmodule m
 npm run dev              # Development
 npm run build            # Production build
 npm run db:push          # Schema pushen (Drizzle)
-npm run assets:placeholders  # Nur bei leerem Projekt — überschreibt echte Bilder!
+npm run assets:ai           # fal.ai Bilder generieren (FAL_KEY nötig)
+npm run assets:placeholders # NUR bei leerem Projekt — überschreibt echte Bilder!
 ```
+
+## Assets (Bilder & Slides)
+
+Alle Modul-Header, Slide-Bilder und Branding-Assets liegen in `public/` und stammen aus **fal.ai** (Script: `npm run assets:ai`).
+
+| Pfad | Inhalt |
+|---|---|
+| `public/header-01..05.jpg` | Modul-Cover (1920×1080) |
+| `public/slides/01..05/s01..s11.png` | Slide-Illustrationen (800×450) |
+| `public/spark-header.jpg` | Dashboard-Hero |
+| `public/cert-bg.jpg` | Zertifikat-PDF-Hintergrund |
+| `public/spark-logo.png` | Logo + Icons |
+
+**KRITISCH:** `assets:placeholders` darf **nicht** im Dockerfile laufen — überschreibt alle echten Bilder mit Farbverläufen. Bei Verlust: `git checkout cf27adc -- public/`.
+
+Generierungs-Scripts in `scripts/`:
+- `generate-branding.mjs`, `generate-module-headers.mjs`, `generate-cert-bg.mjs`
+- `generate-slides-01..05.mjs` (pro Modul)
+- `generate-placeholders.mjs` — nur Dev-Fallback
 
 ## Struktur
 ```
@@ -118,11 +139,11 @@ curl -s https://spark.mmind.space/api/health
 docker logs spark-webapp --tail 20
 ```
 
-## Env (docker-compose.prod.yml)
+## Env (docker-compose.prod.yml + `/opt/spark/.env`)
 | Variable | Zweck |
 |---|---|
 | `DATABASE_URL` | PostgreSQL Connection |
-| `ADMIN_SECRET` | Admin-Dashboard + CSV-Export (**nicht Default lassen!**) |
+| `ADMIN_SECRET` | Admin-Dashboard + CSV-Export — liegt in `/opt/spark/.env` auf dem Server |
 | `NEXT_PUBLIC_BASE_URL` | https://spark.mmind.space (Verify-URLs, OG) |
 
 ## Admin
@@ -132,7 +153,16 @@ docker logs spark-webapp --tail 20
 
 ## Kritische Regeln
 - Kein `node_modules` aus Windows in Container kopieren
+- **Nie** `assets:placeholders` im Docker-Build — echte fal.ai-Bilder in `public/` behalten
 - Download-Counter ist EU KPI — muss funktionieren
 - Zertifikat nur nach server-validiertem Progress
 - Caddyfile liegt im BioAvatar-Stack — nicht in eigenem Compose
-- Default `ADMIN_SECRET=spark-admin-change-me` nur Dev — in Prod überschreiben
+- `ADMIN_SECRET` in `/opt/spark/.env` auf dem Server (nicht committen)
+
+## Changelog (Auszug)
+| Version | Commit | Highlights |
+|---|---|---|
+| v1.0.1 | `caabab0` | fal.ai-Bilder wiederhergestellt, Placeholder aus Dockerfile entfernt |
+| v1.0.0 | `597b0f6` | Sync, Admin, Verify, PWA, Server-Validierung, Framer Motion |
+| v0.3.0 | `f8d487b` | NPS, Module-Tracking, Datenschutz |
+| v0.2.0 | `cf27adc` | Rich Slides mit fal.ai Bildern, Modul-Header |
