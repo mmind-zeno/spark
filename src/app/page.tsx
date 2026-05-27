@@ -225,6 +225,10 @@ export default function Dashboard() {
               Datenschutz
             </Link>
             <span>·</span>
+            <Link href="/impressum" className="hover:text-gray-600 underline underline-offset-2">
+              Impressum
+            </Link>
+            <span>·</span>
             <a href="mailto:info@mmind.ai" className="hover:text-gray-600">
               Kontakt
             </a>
